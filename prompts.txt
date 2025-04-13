@@ -1,0 +1,17 @@
+Prompts Used
+
+1. For understanding the assignment and designing the approach:
+Help me understand the Zeotap Wrangler backend assignment. I need to implement a new directive called `aggregate-stats` that can aggregate byte sizes and time durations from multiple columns. It should accept optional output units and aggregation type. What should be my approach?
+
+2. For modifying ANTLR grammar to support BYTE_SIZE and TIME_DURATION:
+Here's my existing ANTLR grammar for a custom DSL. I want to add support for BYTE_SIZE (like 10MB, 2.3GB) and TIME_DURATION (like 5s, 3m, 1.5h). Help me update the lexer and parser rules.
+
+3. For implementing the directive logic in Java:
+How do I create a new directive in CDAP Wrangler that aggregates multiple byte size or time duration columns, optionally converts the unit, and stores the result in a new column?
+
+4. For converting byte and time units:
+Give me utility methods in Java to convert values with units like 'MB', 'GB', 's', 'm', 'h' into bytes and seconds respectively, and back to desired units.
+
+
+5. For writing unit tests:
+Help me write JUnit test cases for a directive that computes the sum, average, max, or min of multiple columns containing time or byte units.
