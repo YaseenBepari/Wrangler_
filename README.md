@@ -1,218 +1,542 @@
-# Data Prep
+# CDAP Wrangler Enhancement - Aggregate Stats Directive with Units
 
-![cm-available](https://cdap-users.herokuapp.com/assets/cm-available.svg)
-![cdap-transform](https://cdap-users.herokuapp.com/assets/cdap-transform.svg)
-[![Build Status](https://travis-ci.org/cdapio/hydrator-plugins.svg?branch=develop)](https://travis-ci.org/cdapio/hydrator-plugins)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/11434/badge.svg)](https://scan.coverity.com/projects/hydrator-wrangler-transform)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.cdap.wrangler/wrangler-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.cdap.wrangler/wrangler-core)
-[![Javadoc](https://javadoc-emblem.rhcloud.com/doc/io.cdap.wrangler/wrangler-core/badge.svg)](http://www.javadoc.io/doc/io.cdap.wrangler/wrangler-core)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Join CDAP community](https://cdap-users.herokuapp.com/badge.svg?t=wrangler)](https://cdap-users.herokuapp.com?t=1)
+This enhancement introduces a new directive to **CDAP Wrangler** that enables users to compute **aggregate statistics** (`min`, `max`, `avg`, `sum`, `count`) on grouped data, with support for **units** such as `BYTE_SIZE` and `TIME_DURATION`.
 
-A collection of libraries, a pipeline plugin, and a CDAP service for performing data
-cleansing, transformation, and filtering using a set of data manipulation instructions
-(directives). These instructions are either generated using an interative visual tool or
-are manually created.
+## ✨ Features
 
-  * Data Prep defines few concepts that might be useful if you are just getting started with it. Learn about them [here](wrangler-docs/concepts.md)
-  * The Data Prep Transform is [separately documented](wrangler-transform/wrangler-docs/data-prep-transform.md).
-  * [Data Prep Cheatsheet](wrangler-docs/cheatsheet.md)
+### 🔤 Grammar Modification (Directives.g4)
 
-## New Features
+#### 📍 Location:
+`wrangler-core/src/main/antlr4/.../Directives.g4`
 
-More [here](wrangler-docs/upcoming-features.md) on upcoming features.
+#### 🎯 Objective:
+Support parsing of `BYTE_SIZE` and `TIME_DURATION` in Wrangler directives by enhancing the ANTLR grammar.
 
-  * **User Defined Directives, also known as UDD**, allow you to create custom functions to transform records within CDAP DataPrep or a.k.a Wrangler. CDAP comes with a comprehensive library of functions. There are however some omissions, and some specific cases for which UDDs are the solution. Additional information on how you can build your custom directives [here](wrangler-docs/custom-directive.md).
-    * Migrating directives from version 1.0 to version 2.0 [here](wrangler-docs/directive-migration.md)
-    * Information about Grammar [here](wrangler-docs/grammar/grammar-info.md)
-    * Various `TokenType` supported by system [here](../api/src/main/java/io/cdap/wrangler/api/parser/TokenType.java)
-    * Custom Directive Implementation Internals [here](wrangler-docs/udd-internal.md)
+---
 
-  * A new capability that allows CDAP Administrators to **restrict the directives** that are accessible to their users.
-More information on configuring can be found [here](wrangler-docs/exclusion-and-aliasing.md)
+### 1. ➕ Add Lexer Rules
 
-## Demo Videos and Recipes
+Add new tokens for units using lexer rules.
 
-Videos and Screencasts are best way to learn, so we have compiled simple, short screencasts that shows some of the features of Data Prep. Additional videos can be found [here](https://www.youtube.com/playlist?list=PLhmsf-NvXKJn-neqefOrcl4n7zU4TWmIr)
+```antlr
+// Units
+BYTE_SIZE      : [0-9]+ ('.' [0-9]+)? BYTE_UNIT ;
+TIME_DURATION  : [0-9]+ ('.' [0-9]+)? TIME_UNIT ;
 
-### Videos
+// Helper fragments
+fragment BYTE_UNIT : [KMGTP]? ('B' | 'b') ;
+fragment TIME_UNIT : ('ms' | 's' | 'sec' | 'm' | 'min' | 'h' | 'hr' | 'd' | 'day') ;
 
-  * [SCREENCAST] [Creating Lookup Dataset and Joining](https://www.youtube.com/watch?v=Nc1b0rsELHQ)
-  * [SCREENCAST] [Restricted Directives](https://www.youtube.com/watch?v=71EcMQU714U)
-  * [SCREENCAST] [Parse Excel files in CDAP](https://www.youtube.com/watch?v=su5L1noGlEk)
-  * [SCREENCAST] [Parse File As AVRO File](https://www.youtube.com/watch?v=tmwAw4dKUNc)
-  * [SCREENCAST] [Parsing Binary Coded AVRO Messages](https://www.youtube.com/watch?v=Ix_lPo-PDJY)
-  * [SCREENCAST] [Parsing Binary Coded AVRO Messages & Protobuf messages using schema registry](https://www.youtube.com/watch?v=LVLIdWnUX1k)
-  * [SCREENCAST] [Quantize a column - Digitize](https://www.youtube.com/watch?v=VczkYX5SRtY)
-  * [SCREENCAST] [Data Cleansing capability with send-to-error directive](https://www.youtube.com/watch?v=aZd5H8hIjDc)
-  * [SCREENCAST] [Building Data Prep from the GitHub source](https://youtu.be/pGGjKU04Y38)
-  * [VOICE-OVER] [End-to-End Demo Video](https://youtu.be/AnhF0qRmn24)
-  * [SCREENCAST] [Ingesting into Kudu](https://www.youtube.com/watch?v=KBW7a38vlUM)
-  * [SCREENCAST] [Realtime HL7 CCDA XML from Kafka into Time Parititioned Parquet](https://youtu.be/0fqNmnOnD-0)
-  * [SCREENCAST] [Parsing JSON file](https://youtu.be/vwnctcGDflE)
-  * [SCREENCAST] [Flattening arrays](https://youtu.be/SemHxgBYIsY)
-  * [SCREENCAST] [Data cleansing with send-to-error directive](https://www.youtube.com/watch?v=aZd5H8hIjDc)
-  * [SCREENCAST] [Publishing to Kafka](https://www.youtube.com/watch?v=xdc8pvvlI48)
-  * [SCREENCAST] [Fixed length to JSON](https://www.youtube.com/watch?v=3AXu4m1swuM)
+value
+  : STRING
+  | NUMBER
+  | BYTE_SIZE
+  | TIME_DURATION
+  ;
 
-### Recipes
+byteSizeArg
+  : BYTE_SIZE
+  ;
 
-  * [Parsing Apache Log Files](wrangler-demos/parsing-apache-log-files.md)
-  * [Parsing CSV Files and Extracting Column Values](wrangler-demos/parsing-csv-extracting-column-values.md)
-  * [Parsing HL7 CCDA XML Files](wrangler-demos/parsing-hl7-ccda-xml-files.md)
+timeDurationArg
+  : TIME_DURATION
+  ;
+to run 
+mvn clean compile
+![Screenshot 2025-04-11 201359](https://github.com/user-attachments/assets/cba1c526-612d-4a9a-a0df-261560a58da8)
 
-## Available Directives
+## 📍 API Updates (wrangler-api module)
 
-These directives are currently available:
+#### 🎯 Objective:
+Introduce new Java classes for `ByteSize` and `TimeDuration` to extend the `Token` class, and update the API to support these token types.
 
-| Directive                                                              | Description                                                      |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **Parsers**                                                            |                                                                  |
-| [JSON Path](wrangler-docs/directives/json-path.md)                              | Uses a DSL (a JSON path expression) for parsing JSON records     |
-| [Parse as AVRO](wrangler-docs/directives/parse-as-avro.md)                      | Parsing an AVRO encoded message - either as binary or json       |
-| [Parse as AVRO File](wrangler-docs/directives/parse-as-avro-file.md)            | Parsing an AVRO data file                                        |
-| [Parse as CSV](wrangler-docs/directives/parse-as-csv.md)                        | Parsing an input record as comma-separated values                |
-| [Parse as Date](wrangler-docs/directives/parse-as-date.md)                      | Parsing dates using natural language processing                  |
-| [Parse as Excel](wrangler-docs/directives/parse-as-excel.md)                    | Parsing excel file.                                              |
-| [Parse as Fixed Length](wrangler-docs/directives/parse-as-fixed-length.md)      | Parses as a fixed length record with specified widths            |
-| [Parse as HL7](wrangler-docs/directives/parse-as-hl7.md)                        | Parsing Health Level 7 Version 2 (HL7 V2) messages               |
-| [Parse as JSON](wrangler-docs/directives/parse-as-json.md)                      | Parsing a JSON object                                            |
-| [Parse as Log](wrangler-docs/directives/parse-as-log.md)                        | Parses access log files as from Apache HTTPD and nginx servers   |
-| [Parse as Protobuf](wrangler-docs/directives/parse-as-log.md)                   | Parses an Protobuf encoded in-memory message using descriptor    |
-| [Parse as Simple Date](wrangler-docs/directives/parse-as-simple-date.md)        | Parses date strings                                              |
-| [Parse XML To JSON](wrangler-docs/directives/parse-xml-to-json.md)              | Parses an XML document into a JSON structure                     |
-| [Parse as Currency](wrangler-docs/directives/parse-as-currency.md)              | Parses a string representation of currency into a number.        |
-| [Parse as Datetime](wrangler-docs/directives/parse-as-datetime.md)              | Parses strings with datetime values to CDAP datetime type        |
-| **Output Formatters**                                                  |                                                                  |
-| [Write as CSV](wrangler-docs/directives/write-as-csv.md)                        | Converts a record into CSV format                                |
-| [Write as JSON](wrangler-docs/directives/write-as-json-map.md)                  | Converts the record into a JSON map                              |
-| [Write JSON Object](wrangler-docs/directives/write-as-json-object.md)           | Composes a JSON object based on the fields specified.            |
-| [Format as Currency](wrangler-docs/directives/format-as-currency.md)            | Formats a number as currency as specified by locale.             |
-| **Transformations**                                                    |                                                                  |
-| [Changing Case](wrangler-docs/directives/changing-case.md)                      | Changes the case of column values                                |
-| [Cut Character](wrangler-docs/directives/cut-character.md)                      | Selects parts of a string value                                  |
-| [Set Column](wrangler-docs/directives/set-column.md)                            | Sets the column value to the result of an expression execution   |
-| [Find and Replace](wrangler-docs/directives/find-and-replace.md)                | Transforms string column values using a "sed"-like expression    |
-| [Index Split](wrangler-docs/directives/index-split.md)                          | (_Deprecated_)                                                   |
-| [Invoke HTTP](wrangler-docs/directives/invoke-http.md)                          | Invokes an HTTP Service (_Experimental_, potentially slow)       |
-| [Quantization](wrangler-docs/directives/quantize.md)                            | Quantizes a column based on specified ranges                     |
-| [Regex Group Extractor](wrangler-docs/directives/extract-regex-groups.md)       | Extracts the data from a regex group into its own column         |
-| [Setting Character Set](wrangler-docs/directives/set-charset.md)                | Sets the encoding and then converts the data to a UTF-8 String   |
-| [Setting Record Delimiter](wrangler-docs/directives/set-record-delim.md)        | Sets the record delimiter                                        |
-| [Split by Separator](wrangler-docs/directives/split-by-separator.md)            | Splits a column based on a separator into two columns            |
-| [Split Email Address](wrangler-docs/directives/split-email.md)                  | Splits an email ID into an account and its domain                |
-| [Split URL](wrangler-docs/directives/split-url.md)                              | Splits a URL into its constituents                               |
-| [Text Distance (Fuzzy String Match)](wrangler-docs/directives/text-distance.md) | Measures the difference between two sequences of characters      |
-| [Text Metric (Fuzzy String Match)](wrangler-docs/directives/text-metric.md)     | Measures the difference between two sequences of characters      |
-| [URL Decode](wrangler-docs/directives/url-decode.md)                            | Decodes from the `application/x-www-form-urlencoded` MIME format |
-| [URL Encode](wrangler-docs/directives/url-encode.md)                            | Encodes to the `application/x-www-form-urlencoded` MIME format   |
-| [Trim](wrangler-docs/directives/trim.md)                                        | Functions for trimming white spaces around string data           |
-| **Encoders and Decoders**                                              |                                                                  |
-| [Decode](wrangler-docs/directives/decode.md)                                    | Decodes a column value as one of `base32`, `base64`, or `hex`    |
-| [Encode](wrangler-docs/directives/encode.md)                                    | Encodes a column value as one of `base32`, `base64`, or `hex`    |
-| **Unique ID**                                                          |                                                                  |
-| [UUID Generation](wrangler-docs/directives/generate-uuid.md)                    | Generates a universally unique identifier (UUID) .Recommended to use with Wrangler version 4.4.0 and above due to an important bug fix [CDAP-17732](https://cdap.atlassian.net/browse/CDAP-17732)             |
-| **Date Transformations**                                               |                                                                  |
-| [Diff Date](wrangler-docs/directives/diff-date.md)                              | Calculates the difference between two dates                      |
-| [Format Date](wrangler-docs/directives/format-date.md)                          | Custom patterns for date-time formatting                         |
-| [Format Unix Timestamp](wrangler-docs/directives/format-unix-timestamp.md)      | Formats a UNIX timestamp as a date                               |
-| **DateTime Transformations**                                                    |                                                                  |
-| [Current DateTime](wrangler-docs/directives/current-datetime.md)                | Generates the current datetime using the given zone or UTC by default|
-| [Datetime To Timestamp](wrangler-docs/directives/datetime-to-timestamp.md)      | Converts a datetime value to timestamp with the given zone       |
-| [Format Datetime](wrangler-docs/directives/format-datetime.md)                  | Formats a datetime value to custom date time pattern strings     |
-| [Timestamp To Datetime](wrangler-docs/directives/timestamp-to-datetime.md)      | Converts a timestamp value to datetime                           |
-| **Lookups**                                                            |                                                                  |
-| [Catalog Lookup](wrangler-docs/directives/catalog-lookup.md)                    | Static catalog lookup of ICD-9, ICD-10-2016, ICD-10-2017 codes   |
-| [Table Lookup](wrangler-docs/directives/table-lookup.md)                        | Performs lookups into Table datasets                             |
-| **Hashing & Masking**                                                  |                                                                  |
-| [Message Digest or Hash](wrangler-docs/directives/hash.md)                      | Generates a message digest                                       |
-| [Mask Number](wrangler-docs/directives/mask-number.md)                          | Applies substitution masking on the column values                |
-| [Mask Shuffle](wrangler-docs/directives/mask-shuffle.md)                        | Applies shuffle masking on the column values                     |
-| **Row Operations**                                                     |                                                                  |
-| [Filter Row if Matched](wrangler-docs/directives/filter-row-if-matched.md)      | Filters rows that match a pattern for a column                                         |
-| [Filter Row if True](wrangler-docs/directives/filter-row-if-true.md)            | Filters rows if the condition is true.                                                  |
-| [Filter Row Empty of Null](wrangler-docs/directives/filter-empty-or-null.md)    | Filters rows that are empty of null.                    |
-| [Flatten](wrangler-docs/directives/flatten.md)                                  | Separates the elements in a repeated field                       |
-| [Fail on condition](wrangler-docs/directives/fail.md)                           | Fails processing when the condition is evaluated to true.        |
-| [Send to Error](wrangler-docs/directives/send-to-error.md)                      | Filtering of records to an error collector                       |
-| [Send to Error And Continue](wrangler-docs/directives/send-to-error-and-continue.md) | Filtering of records to an error collector and continues processing                      |
-| [Split to Rows](wrangler-docs/directives/split-to-rows.md)                      | Splits based on a separator into multiple records                |
-| **Column Operations**                                                  |                                                                  |
-| [Change Column Case](wrangler-docs/directives/change-column-case.md)            | Changes column names to either lowercase or uppercase            |
-| [Changing Case](wrangler-docs/directives/changing-case.md)                      | Change the case of column values                                 |
-| [Cleanse Column Names](wrangler-docs/directives/cleanse-column-names.md)        | Sanatizes column names, following specific rules                 |
-| [Columns Replace](wrangler-docs/directives/columns-replace.md)                  | Alters column names in bulk                                      |
-| [Copy](wrangler-docs/directives/copy.md)                                        | Copies values from a source column into a destination column     |
-| [Drop Column](wrangler-docs/directives/drop.md)                                 | Drops a column in a record                                       |
-| [Fill Null or Empty Columns](wrangler-docs/directives/fill-null-or-empty.md)    | Fills column value with a fixed value if null or empty           |
-| [Keep Columns](wrangler-docs/directives/keep.md)                                | Keeps specified columns from the record                          |
-| [Merge Columns](wrangler-docs/directives/merge.md)                              | Merges two columns by inserting a third column                   |
-| [Rename Column](wrangler-docs/directives/rename.md)                             | Renames an existing column in the record                         |
-| [Set Column Header](wrangler-docs/directives/set-headers.md)                     | Sets the names of columns, in the order they are specified       |
-| [Split to Columns](wrangler-docs/directives/split-to-columns.md)                | Splits a column based on a separator into multiple columns       |
-| [Swap Columns](wrangler-docs/directives/swap.md)                                | Swaps column names of two columns                                |
-| [Set Column Data Type](wrangler-docs/directives/set-type.md)                    | Convert data type of a column                                    |
-| **NLP**                                                                |                                                                  |
-| [Stemming Tokenized Words](wrangler-docs/directives/stemming.md)                | Applies the Porter stemmer algorithm for English words           |
-| **Transient Aggregators & Setters**                                    |                                                                  |
-| [Increment Variable](wrangler-docs/directives/increment-variable.md)            | Increments a transient variable with a record of processing.     |
-| [Set Variable](wrangler-docs/directives/set-variable.md)                        | Sets a transient variable with a record of processing.     |
-| **Functions**                                                          |                                                                  |
-| [Data Quality](wrangler-docs/functions/dq-functions.md)                         | Data quality check functions. Checks for date, time, etc.        |
-| [Date Manipulations](wrangler-docs/functions/date-functions.md)                 | Functions that can manipulate date                               |
-| [DDL](wrangler-docs/functions/ddl-functions.md)                                 | Functions that can manipulate definition of data                 |
-| [JSON](wrangler-docs/functions/json-functions.md)                               | Functions that can be useful in transforming your data           |
-| [Types](wrangler-docs/functions/type-functions.md)                              | Functions for detecting the type of data                         |
+---
 
-## Performance
+### 1. ➕ Create New Java Classes
 
-Initial performance tests show that with a set of directives of high complexity for
-transforming data, *DataPrep* is able to process at about ~106K records per second. The
-rates below are specified as *records/second*. 
+We will create two classes, `ByteSize.java` and `TimeDuration.java`, which extend the `Token` class. These classes will parse tokens like `"10KB"`, `"150ms"` and provide methods to retrieve the value in a canonical unit (e.g., bytes for `ByteSize`, milliseconds for `TimeDuration`).
 
-| Directive Complexity | Column Count |    Records |           Size | Mean Rate |
-| -------------------- | :----------: | ---------: | -------------: | --------: |
-| High (167 Directives) |      426      | 127,946,398 |  82,677,845,324 | 106,367.27 |
-| High (167 Directives) |      426      | 511,785,592 | 330,711,381,296 | 105,768.93 |
+#### Example: `ByteSize.java`
+```java
+package io.cdap.wrangler.api.parser;
+
+public class ByteSize extends Token {
+    private final long valueInBytes;
+
+    public ByteSize(String token) {
+        // Parse the token string (e.g., "10KB", "2MB")
+        this.valueInBytes = parseByteSize(token);
+    }
+
+    private long parseByteSize(String token) {
+        // Parse logic: Handle different byte units (KB, MB, GB, etc.)
+        long sizeInBytes = 0;
+        String unit = token.replaceAll("[0-9]", "").toUpperCase();
+        double value = Double.parseDouble(token.replaceAll("[^0-9.]", ""));
+        
+        switch (unit) {
+            case "KB":
+                sizeInBytes = (long) (value * 1024);
+                break;
+            case "MB":
+                sizeInBytes = (long) (value * 1024 * 1024);
+                break;
+            case "GB":
+                sizeInBytes = (long) (value * 1024 * 1024 * 1024);
+                break;
+            // Add other units as needed
+            default:
+                sizeInBytes = (long) value; // Assuming bytes if no unit provided
+        }
+        return sizeInBytes;
+    }
+
+    public long getBytes() {
+        return valueInBytes;
+    }
+}
+Run the tests:
+mvn test
+![image](https://github.com/user-attachments/assets/d0845e00-32dd-44cb-b126-c54a87acd386)
+ 
+(c) Core Parser Updates (wrangler-core module):
+ I’ve already: Created new grammar rules in directive.g4 (Step 3a). Now we need to visit and process those parsed tokens in Java.
+1. Find or Create the Visitor Class
+Go to:
+wrangler-core/src/main/java
+Look for a file similar to: RecipeVisitor.java
+RecipeEvaluator.java
+You’re looking for a class that extends RecipeBaseVisitor (or RecipeBaseListener).
+
+2. Add or Modify Visit Methods
+Let’s say in diective.g4, I have  added something like:
+byteSizeArg: BYTE_SIZE;
+timeDurationArg: TIME_DURATION;
 
 
-## Contact
+Than in java:
+@Override
+public Object visitByteSizeArg(RecipeParser.ByteSizeArgContext ctx) {
+    String value = ctx.getText(); // e.g., "10MB"
+    long bytes = convertToBytes(value); // helper function you write
+    return new Token(TokenType.BYTE_SIZE, bytes);
+}
 
-### Mailing Lists
+@Override
+public Object visitTimeDurationArg(RecipeParser.TimeDurationArgContext ctx) {
+    String value = ctx.getText(); // e.g., "5ms"
+    long millis = convertToMillis(value); // helper function
+    return new Token(TokenType.TIME_DURATION, millis);
+}
 
-CDAP User Group and Development Discussions:
+________________________________________
+ 3. Write Helper Functions
+Add helper methods like:
+/**
+ * Converts a string representing a size (e.g., "10KB", "5MB", "2GB") to its equivalent size in bytes.
+ *
+ * @param input The size string (e.g., "10KB", "5MB", "2GB").
+ * @return The size in bytes as a long value.
+ */
+private long convertToBytes(String input) {
+    // Check if the input ends with "KB" and convert to bytes
+    if (input.endsWith("KB")) return Long.parseLong(input.replace("KB", "")) * 1024;
+    
+    // Check if the input ends with "MB" and convert to bytes
+    if (input.endsWith("MB")) return Long.parseLong(input.replace("MB", "")) * 1024 * 1024;
+    
+    // Check if the input ends with "GB" and convert to bytes
+    if (input.endsWith("GB")) return Long.parseLong(input.replace("GB", "")) * 1024 * 1024 * 1024;
+    
+    // If no unit is found, return the value as it is (fallback)
+    return Long.parseLong(input); 
+}
 
-* [cdap-user@googlegroups.com](https://groups.google.com/d/forum/cdap-user)
+/**
+ * Converts a string representing a duration (e.g., "10ms", "5s", "2m") to its equivalent duration in milliseconds.
+ *
+ * @param input The duration string (e.g., "10ms", "5s", "2m").
+ * @return The duration in milliseconds as a long value.
+ */
+private long convertToMillis(String input) {
+    // Check if the input ends with "ms" and return the value in milliseconds
+    if (input.endsWith("ms")) return Long.parseLong(input.replace("ms", ""));
+    
+    // Check if the input ends with "s" (seconds) and convert to milliseconds
+    if (input.endsWith("s")) return Long.parseLong(input.replace("s", "")) * 1000;
+    
+    // Check if the input ends with "m" (minutes) and convert to milliseconds
+    if (input.endsWith("m")) return Long.parseLong(input.replace("m", "")) * 1000 * 60;
+    
+    // If no unit is found, return the value as it is (fallback)
+    return Long.parseLong(input); 
+}
 
-The *cdap-user* mailing list is primarily for users using the product to develop
-applications or building plugins for appplications. You can expect questions from
-users, release announcements, and any other discussions that we think will be helpful
-to the users.
+________________________________________
+4. Add to TokenGroup
+If youre using a TokenGroup object to collect parsed tokens:
+tokenGroup.add(new Token(TokenType.BYTE_SIZE, bytes));
+or
 
-### IRC Channel
-
-CDAP IRC Channel: [#cdap on irc.freenode.net](http://webchat.freenode.net?channels=%23cdap)
-
-### Slack Team
-
-CDAP Users on Slack: [cdap-users team](https://cdap-users.herokuapp.com)
+tokenGroup.add(new Token(TokenType.TIME_DURATION, millis));
 
 
-## License and Trademarks
+ To execte the step 3 run the commond
 
-Copyright © 2016-2019 Cask Data, Inc.
+ mvn clean compile exec:java -Dexec.mainClass="io.cdap.wrangler.api.parser.TestDuration"
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-in compliance with the License. You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software distributed under the
-License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-either express or implied. See the License for the specific language governing permissions
-and limitations under the License.
 
-Cask is a trademark of Cask Data, Inc. All rights reserved.
+Output 
 
-Apache, Apache HBase, and HBase are trademarks of The Apache Software Foundation. Used with
-permission. No endorsement by The Apache Software Foundation is implied by the use of these marks.
+1h
+3600000
+
+
+(d) New Directive Implementation (wrangler-core module): 
+Great! Let's walk through how to structure the new directive for the wrangler-core module. Here's a full breakdown of what I have done 
+________________________________________
+Step-by-Step: Implementing the Aggregate Directive
+1.	Create a New Directive Class As AggregateStats.java
+Name it something like AggregateStats.
+@Directive(name = "aggregate-stats", usage = "Aggregates byte sizes and time durations")
+public class AggregateStats implements Directive {
+
+2. Define Arguments
+In define() method, declare your directive’s usage:
+java
+CopyEdit
+@Override
+public UsageDefinition define() {
+    return UsageDefinition.builder("aggregate-stats")
+        .addRequiredArg("sourceSizeCol")
+        .addRequiredArg("sourceTimeCol")
+        .addRequiredArg("targetSizeCol")
+        .addRequiredArg("targetTimeCol")
+        .addOptionalArg("sizeUnit")    // e.g., MB, GB
+        .addOptionalArg("timeUnit")    // e.g., seconds, minutes
+        .addOptionalArg("aggregationType") // total or average
+        .build();
+}
+
+3. Initialize Directive with Arguments
+java
+CopyEdit
+private String sourceSizeCol;
+private String sourceTimeCol;
+private String targetSizeCol;
+private String targetTimeCol;
+private String sizeUnit = "B";
+private String timeUnit = "ns";
+private String aggregationType = "total";
+
+@Override
+public void initialize(Arguments arguments) {
+    sourceSizeCol = arguments.value("sourceSizeCol");
+    sourceTimeCol = arguments.value("sourceTimeCol");
+    targetSizeCol = arguments.value("targetSizeCol");
+    targetTimeCol = arguments.value("targetTimeCol");
+
+    sizeUnit = arguments.valueOrDefault("sizeUnit", "B").toUpperCase();
+    timeUnit = arguments.valueOrDefault("timeUnit", "ns").toLowerCase();
+    aggregationType = arguments.valueOrDefault("aggregationType", "total").toLowerCase();
+}
+
+4. Use ExecutorContext Store to Accumulate Totals
+java
+CopyEdit
+private static final String TOTAL_SIZE_KEY = "agg_total_size";
+private static final String TOTAL_TIME_KEY = "agg_total_time";
+private static final String COUNT_KEY = "agg_count";
+
+@Override
+public List<Row> execute(List<Row> rows, ExecutorContext context) throws DirectiveExecuteException {
+    long totalSize = context.getOrDefault(TOTAL_SIZE_KEY, 0L);
+    long totalTime = context.getOrDefault(TOTAL_TIME_KEY, 0L);
+    int count = context.getOrDefault(COUNT_KEY, 0);
+
+    for (Row row : rows) {
+        Object sizeVal = row.getValue(sourceSizeCol);
+        Object timeVal = row.getValue(sourceTimeCol);
+
+        long sizeInBytes = UnitParser.parseByteSize(sizeVal.toString()); // You’ll implement this
+        long timeInNs = UnitParser.parseTimeDuration(timeVal.toString()); // Implement this too
+
+        totalSize += sizeInBytes;
+        totalTime += timeInNs;
+        count++;
+    }
+
+    context.set(TOTAL_SIZE_KEY, totalSize);
+    context.set(TOTAL_TIME_KEY, totalTime);
+    context.set(COUNT_KEY, count);
+
+    return Collections.emptyList(); // Aggregates don't emit intermediate rows
+}
+________________________________________
+5. Finalization: Return Aggregate Result
+java
+CopyEdit
+@Override
+public List<Row> finalize(ExecutorContext context) {
+    long totalSize = context.getOrDefault(TOTAL_SIZE_KEY, 0L);
+    long totalTime = context.getOrDefault(TOTAL_TIME_KEY, 0L);
+    int count = context.getOrDefault(COUNT_KEY, 1);
+
+    if (aggregationType.equals("average")) {
+        totalSize = totalSize / count;
+        totalTime = totalTime / count;
+    }
+
+    double finalSize = UnitParser.convertBytes(totalSize, sizeUnit); // e.g., to MB
+    double finalTime = UnitParser.convertTime(totalTime, timeUnit); // e.g., to seconds
+
+    Row output = RowHelper.newRow()
+        .add(targetSizeCol, finalSize)
+        .add(targetTimeCol, finalTime)
+        .build();
+
+    return Collections.singletonList(output);
+}
+output
+
+ 
+6. Helper: UnitParser Class
+Make a utility class for parsing strings like 10 MB, 5 sec, 1.5 GB, etc., and converting to canonical unitsGpackage io.cdap.directives;
+package io.cdap.directives;
+
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Utility class to parse byte sizes (e.g., "1.5GB", "200 KB") and 
+ * time durations (e.g., "5s", "2.5h") into their base units.
+ * 
+ * - Byte sizes are converted to bytes.
+ * - Time durations are converted to nanoseconds.
+ * 
+ * It also supports converting base units back into target units 
+ * (e.g., bytes to MB, nanoseconds to seconds).
+ */
+public class UnitParser {
+
+    // Regex patterns to match size and time formats (e.g., "1.5GB", "500 ms")
+    private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(B|KB|MB|GB|TB)?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TIME_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*(ns|us|ms|s|m|h)?", Pattern.CASE_INSENSITIVE);
+
+    // Multipliers for converting units to base units
+    private static final long[] SIZE_MULTIPLIERS = {
+        1L,                         // B
+        1024L,                      // KB
+        1024L * 1024,               // MB
+        1024L * 1024 * 1024,        // GB
+        1024L * 1024 * 1024 * 1024  // TB
+    };
+
+    private static final long[] TIME_MULTIPLIERS = {
+        1L,                         // ns
+        1_000L,                     // us
+        1_000_000L,                 // ms
+        1_000_000_000L,             // s
+        60L * 1_000_000_000L,       // m
+        3600L * 1_000_000_000L      // h
+    };
+
+    // Units supported for byte size and time duration
+    private static final String[] SIZE_UNITS = {"B", "KB", "MB", "GB", "TB"};
+    private static final String[] TIME_UNITS = {"ns", "us", "ms", "s", "m", "h"};
+
+    /**
+     * Parses a byte size string and converts it into bytes.
+     *
+     * @param sizeStr the input size string (e.g., "1.5GB", "1024 KB")
+     * @return the size in bytes
+     * @throws IllegalArgumentException if the format or unit is invalid
+     */
+    public static long parseByteSize(String sizeStr) {
+        Matcher matcher = SIZE_PATTERN.matcher(sizeStr.trim().toUpperCase(Locale.ROOT));
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid byte size format: " + sizeStr);
+        }
+
+        double value = Double.parseDouble(matcher.group(1));
+        String unit = matcher.group(2) == null ? "B" : matcher.group(2);
+
+        for (int i = 0; i < SIZE_UNITS.length; i++) {
+            if (unit.equals(SIZE_UNITS[i])) {
+                return (long) (value * SIZE_MULTIPLIERS[i]);
+            }
+        }
+        throw new IllegalArgumentException("Unknown size unit: " + unit);
+    }
+
+    /**
+     * Parses a time duration string and converts it into nanoseconds.
+     *
+     * @param durationStr the input duration string (e.g., "500ms", "2h")
+     * @return the time in nanoseconds
+     * @throws IllegalArgumentException if the format or unit is invalid
+     */
+    public static long parseTimeDuration(String durationStr) {
+        Matcher matcher = TIME_PATTERN.matcher(durationStr.trim().toLowerCase(Locale.ROOT));
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid time duration format: " + durationStr);
+        }
+
+        double value = Double.parseDouble(matcher.group(1));
+        String unit = matcher.group(2) == null ? "ns" : matcher.group(2);
+
+        for (int i = 0; i < TIME_UNITS.length; i++) {
+            if (unit.equals(TIME_UNITS[i])) {
+                return (long) (value * TIME_MULTIPLIERS[i]);
+            }
+        }
+        throw new IllegalArgumentException("Unknown time unit: " + unit);
+    }
+
+    /**
+     * Converts a byte value into the target unit (e.g., KB, MB).
+     *
+     * @param bytes the value in bytes
+     * @param toUnit the unit to convert to (e.g., "MB")
+     * @return the converted value as a double
+     * @throws IllegalArgumentException if the unit is invalid
+     */
+    public static double convertBytes(long bytes, String toUnit) {
+        toUnit = toUnit.toUpperCase(Locale.ROOT);
+        for (int i = 0; i < SIZE_UNITS.length; i++) {
+            if (toUnit.equals(SIZE_UNITS[i])) {
+                return bytes / (double) SIZE_MULTIPLIERS[i];
+            }
+        }
+        throw new IllegalArgumentException("Invalid byte unit for conversion: " + toUnit);
+    }
+
+    /**
+     * Converts a nanosecond value into the target time unit (e.g., ms, s).
+     *
+     * @param nanos the value in nanoseconds
+     * @param toUnit the unit to convert to (e.g., "s")
+     * @return the converted value as a double
+     * @throws IllegalArgumentException if the unit is invalid
+     */
+    public static double convertTime(long nanos, String toUnit) {
+        toUnit = toUnit.toLowerCase(Locale.ROOT);
+        for (int i = 0; i < TIME_UNITS.length; i++) {
+            if (toUnit.equals(TIME_UNITS[i])) {
+                return nanos / (double) TIME_MULTIPLIERS[i];
+            }
+        }
+        throw new IllegalArgumentException("Invalid time unit for conversion: " + toUnit);
+    }
+}
+
+
+
+Output  Expected Output Row
+ 
+4. Test Case Specification: Aggregation
+To test the aggregate-stats directive by passing sample data and recipe, and verifying the aggregation output.
+________________________________________
+🧪 Sample Input Data (List of Rows)
+java
+CopyEdit
+List<Row> rows = Arrays.asList(
+    new Row("data_transfer_size", "1MB").add("response_time", "5min"),
+    new Row("data_transfer_size", "500KB").add("response_time", "120s"),
+    new Row("data_transfer_size", "2GB").add("response_time", "2h")
+);
+________________________________________
+Sample Recipe
+String[] recipe = new String[] {
+    "aggregate-stats :data_transfer_size :response_time total_size_mb total_time_sec MB seconds total average"
+};
+________________________________________
+ Expected Output
+Since this is an aggregate directive, it will emit a single row with computed values.
+Manual Conversion Reference:
+• Byte Sizes:
+o 1MB = 1,048,576 bytes
+o 500KB = 512,000 bytes
+o 2GB = 2,147,483,648 bytes
+o Total = 2,149,044,224 bytes
+o MB = 2049.0 MB
+• Time Durations:
+o 5min = 300s
+o 120s = 120s
+o 2h = 7200s
+o Total = 7620s
+o Average = 2540s
+
+
+Row expectedRow = new Row("total_size_mb", 2049.0);
+expectedRow.add("total_time_sec", 2540.0);
+
+JUnit Test Example
+
+@Test
+public void testAggregateStatsDirective() throws Exception {
+    // Define the Wrangler recipe for the aggregate-stats directive.
+    // Syntax: aggregate-stats :inputCols outputCol1 outputCol2 outputUnit1 outputUnit2 aggType1 aggType2
+    // In this case: aggregate byte size and time duration, convert to MB and seconds, aggregate using total and average
+    String[] recipe = new String[] {
+        "aggregate-stats :data_transfer_size :response_time total_size_mb total_time_sec MB seconds total average"
+    };
+
+    // Prepare input rows with mixed unit values for size and time
+    List<Row> rows = Arrays.asList(
+        new Row("data_transfer_size", "1MB").add("response_time", "5min"),    // 1 MB, 300 sec
+        new Row("data_transfer_size", "500KB").add("response_time", "120s"),  // 0.5 MB, 120 sec
+        new Row("data_transfer_size", "2GB").add("response_time", "2h")       // 2048 MB, 7200 sec
+    );
+
+    // Execute the Wrangler transformation using the defined recipe
+    TestingRig rig = new TestingRig(recipe);
+    List<Row> results = rig.execute(rows);
+
+    // Validate that a single output row is returned
+    assertEquals(1, results.size());
+
+    // Retrieve the result row
+    Row result = results.get(0);
+
+    // Validate the total aggregated size in MB: (1 + 0.5 + 2048) = 2049.5 ~ 2049.0
+    assertEquals(2049.0, (Double) result.getValue("total_size_mb"), 0.1);
+
+    // Validate the average time in seconds: (300 + 120 + 7200) / 3 = 2540 sec
+    assertEquals(2540.0, (Double) result.getValue("total_time_sec"), 0.1);
+}
+
+
+Variants to Test
+•	average vs total
+•	Output in GB, KB, etc.
+•	Durations in ms, min, h, etc.
+•	Different percentiles: median, p95, p99
+•	Empty input (should return 0 or null)
+•	Invalid unit formats (should throw exception or log error)
+ 
+AI Tools Usage
+Tool Used: ChatGPT (OpenAI)
+Purpose: Assistance with backend design, code implementation, ANTLR grammar modification, directive logic, and test writing.
+________________________________________
+Prompts Used
+Help me understand the Zeotap Wrangler backend assignment. I need to implement a new directive called `aggregate-stats` that can aggregate byte sizes and time durations from multiple columns. It should accept optional output units and aggregation type. What should be my approach?
+2. For modifying ANTLR grammar to support BYTE_SIZE and TIME_DURATION:
+Here's my existing ANTLR grammar for a custom DSL. I want to add support for BYTE_SIZE (like 10MB, 2.3GB) and TIME_DURATION (like 5s, 3m, 1.5h). Help me update the lexer and parser rules.
+3. For implementing the directive logic in Java:
+How do I create a new directive in CDAP Wrangler that aggregates multiple byte size or time duration columns, optionally converts the unit, and stores the result in a new column?
+4. For converting byte and time units:
+Give me utility methods in Java to convert values with units like 'MB', 'GB', 's', 'm', 'h' into bytes and seconds respectively, and back to desired units.
+5. For writing unit tests:
+Help me write JUnit test cases for a directive that computes the sum, average, max, or min of multiple columns containing time or byte units.
+6. For validating intermediate logic and debugging:
+I'm facing an issue where the output column is showing the wrong converted value. Here's my conversion code — 
+
+
+Prompt.txt file in github
+
+
+ 
